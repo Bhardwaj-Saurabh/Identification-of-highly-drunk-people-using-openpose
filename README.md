@@ -3,9 +3,9 @@ This program identifies highly drunk people among others. Individual people are 
 
 # Run the program 
 
-1 - Create OpenPose - API 
-2 - Download all files from the Repository
-3 - Run the Jupyter Notebook or .py file on any video
+1 - Create OpenPose - API \n
+2 - Download all files from the Repository \n
+3 - Run the Jupyter Notebook or .py file on any video \n
 
 
 # Compiling pyopenpose
