@@ -21,30 +21,14 @@ def Updated_keypoint():
             RShoulder = scores[i][2]
             LShoulder = scores[i][5]
 
-            if nose < 0.1  and RAnkle < 0.5 and LAnkle < 0.5 and RShoulder < 0.1 and LShoulder < 0.1:
+            if nose < 0.1  and RAnkle < 0.5 and LAnkle < 0.5 and RShoulder < 0.2\
+             and LShoulder < 0.2:
                 idx.append(i)
 
         update_kp = np.delete(keypoints, idx, 0)
         return update_kp
     else:
         return None
-
-
-def calc_motion_efficiency(centre):
-    steps = len(centre)
-    disp = distance.euclidean(centre[0], centre[-1])
-    #print(disp)
-    moving_length = 0
-
-    for step in range(0, steps-1):
-        dist_step = distance.euclidean(centre[step], centre[step + 1])
-        #print(dist_step)
-        moving_length += dist_step
-
-    #print(moving_length)
-    
-    motion_efficiency = disp/moving_length
-    return motion_efficiency
 
 def pose2box(poses):
     global seen_bodyparts
@@ -70,45 +54,54 @@ def pose2box(poses):
 
         x1 = int(min(x))
         x2 = int(max(x))
-        y1 = int(min(y) - 20)
-        y2 = int(max(y) + 10)
+        y1 = int(min(y))
+        y2 = int(max(y))
         
         if x1 > 0 and x2 > 0 and y1 > 0 and y2 > 0:
-            box = [x1, y1, x2, y2]
+            box = [x1, y1 -20, x2, y2 + 5]
             boxes.append(box)
     return np.array(boxes)
 
-def poses2boxes(poses):
-    global seen_bodyparts
-    """
-    Parameters
-    ----------
-    poses: ndarray of human 2D poses [People * BodyPart]
-    Returns
-    ----------
-    boxes: ndarray of containing boxes [People * [x1,y1,x2,y2]]
-    """
-    boxes = []
-    for person in poses:
-        seen_bodyparts = person[np.where((person[:,0] != 0) | (person[:,1] != 0))]
-        # box = [ int(min(seen_bodyparts[:,0])),int(min(seen_bodyparts[:,1])),
-        #        int(max(seen_bodyparts[:,0])),int(max(seen_bodyparts[:,1]))]
-        mean = np.mean(seen_bodyparts, axis=0)
-        deviation = np.std(seen_bodyparts, axis = 0)
-        box = [int(mean[0]-deviation[0]), int(mean[1]-deviation[1]), int(mean[0]+deviation[0]), int(mean[1]+deviation[1])]
-        boxes.append(box)
-    return np.array(boxes)
-
-def updated_boxes(boxes, tracking_line, starting_line, frame_height):
+def updated_boxes(boxes, starting_line, frame_height):
 
     update_box = []
     for i in range(len(boxes)):
         x1,y1,x2,y2 = boxes[i]
         h = y2 - y1
-        if h > tracking_line and y2 > starting_line and y2 < (frame_height*90/100):
+        if h > 50 and y2 > starting_line:
             update_box.append(boxes[i])
 
     return update_box
+
+def calc_motion_efficiency(centre):
+    steps = len(centre)
+    disp = distance.euclidean(centre[0], centre[-1])
+    #print(disp)
+    moving_length = 0
+
+    for step in range(0, steps-1):
+        dist_step = distance.euclidean(centre[step], centre[step + 1])
+        #print(dist_step)
+        moving_length += dist_step
+
+    #print(moving_length)
+    
+    motion_efficiency = disp/moving_length
+    return motion_efficiency
+
+def cal_S(lambd_pt, T_mh, T_ml, sigma_m, sm_p):
+
+    if lambd_pt >= T_mh:
+        sm = sm_p + lambd_pt
+    elif lambd_pt < T_ml:
+        sm = sm_p - sigma_m
+    else:
+        sm = sm_p
+
+    if sm >= 0:
+        return sm
+    else:
+        return 0
 
 def distancia_midpoints(mid1, mid2):
     return np.linalg.norm(np.array(mid1)-np.array(mid2))
